@@ -1,28 +1,30 @@
 # vacourts-mcp :: VPS deploy runbook
 
-Scaffold built + tested in sandbox; transfer to the VPS was blocked by the Shell MCP host-mount
-being intermittently absent (see issue #1). Run this directly on `178.16.141.166` (SSH, where the
-mount is not a factor) to finish the install.
+Bulk-first design, no live scraping (OCIS 2.0 EULA bars automated scripting/data-mining).
+Programmatic data = local SQLite from virginiacourtdata.org CSVs (Circuit + GD, civil + criminal,
+names present, through 2024). `bulk_ingest.py` auto-detects all 4 dataset schemas. `lookup_pointer`
+returns a URL + steps for a human one-off lookup; it does not automate access.
+
+Deploy is run directly on `178.16.141.166` over SSH (the Shell MCP host mount is unreliable, issue #1).
 
 ## Staged tarball (exact tested bytes)
-- URL: https://tmpfiles.org/dl/wyw0AKpGoQPE/vacourts.tgz  (expires ~24h from 2026-05-28; reupload if dead)
-- sha256: `9a10b0a8e4b289fc502b3a963868acf45a301c856af000a85794f08c3efb67a1`
-- contents: server.py, store.py, schema.py, bulk_ingest.py, patchright_client.py, localities.yaml (133 localities), pyproject.toml, requirements.txt, .env.example, DEPLOYMENT.md
+- URL: https://tmpfiles.org/dl/wpw1eZAbLwph/vacourts.tgz  (expires ~24h from 2026-05-28; reupload if dead)
+- sha256: `1812b4fc871372591d83ce012c963a1a9731c88ec1d06e04ad1c20ccd0d82fa4`
+- contents: server.py, store.py, schema.py, bulk_ingest.py, lookups.py, localities.yaml (133), pyproject.toml, requirements.txt, .env.example, DEPLOYMENT.md
 
-## One-shot install (flat, paste as-is)
+## One-shot install (flat, paste as-is over SSH)
 ```bash
-cd /opt && python3.12 -c 'import urllib.request;urllib.request.urlretrieve("https://tmpfiles.org/dl/wyw0AKpGoQPE/vacourts.tgz","/tmp/v.tgz")' \
- && sha256sum /tmp/v.tgz | grep -q 9a10b0a8e4b289fc502b3a963868acf45a301c856af000a85794f08c3efb67a1 \
+cd /opt && python3.12 -c 'import urllib.request;urllib.request.urlretrieve("https://tmpfiles.org/dl/wpw1eZAbLwph/vacourts.tgz","/tmp/v.tgz")' \
+ && sha256sum /tmp/v.tgz | grep -q 1812b4fc871372591d83ce012c963a1a9731c88ec1d06e04ad1c20ccd0d82fa4 \
  && mkdir -p /opt/vacourts-mcp && tar xzf /tmp/v.tgz -C /opt/vacourts-mcp && cd /opt/vacourts-mcp \
- && cp -n .env.example .env \
- && /root/.local/bin/uv venv --python /usr/bin/python3.12 \
+ && cp -n .env.example .env && /root/.local/bin/uv venv --python /usr/bin/python3.12 \
  && /root/.local/bin/uv pip install -r requirements.txt \
- && .venv/bin/patchright install chromium \
- && .venv/bin/python -c 'import fastmcp,patchright,yaml;print("DEPS_OK")'
+ && .venv/bin/python -c 'import fastmcp,yaml,bulk_ingest,server;print("OK")'
 ```
+(No chromium step anymore; patchright dependency removed with the scraper.)
 
 ## systemd unit  (/etc/systemd/system/vacourts-mcp.service)
-Mirrors attom-mcp. Port 3031 (3030/8020/8100 already used).
+Port 3031 (3030/8020/8100 already used). Mirrors attom-mcp.
 ```ini
 [Unit]
 Description=Virginia Courts MCP (vacourts.nlma.io)
@@ -42,10 +44,14 @@ WantedBy=multi-user.target
 systemctl daemon-reload && systemctl enable --now vacourts-mcp && systemctl status vacourts-mcp --no-pager
 ```
 
-## Caddy vhost (defer until live layer works + MCP_OWNER_PASSWORD set)
-Add vacourts.nlma.io -> reverse_proxy 127.0.0.1:3031, mirroring /etc/caddy/attom.nlma.io. Then add
-the connector in Claude. Do NOT expose publicly until the password cookie wrapper is in server.py:main (TODO).
+## Load bulk data
+Download Circuit + GD CSV/ZIPs from virginiacourtdata.org, then:
+```bash
+.venv/bin/python bulk_ingest.py /path/to/*.zip
+```
 
-## Then: build-out (issue #2)
-Live selector recon on OCIS + CJISWeb via patchright (CAPTCHA solved by hand once), fill the
-TODO:LIVE selectors in patchright_client.py.
+## Caddy vhost + connector (defer until MCP_OWNER_PASSWORD cookie added to server.main)
+vacourts.nlma.io -> 127.0.0.1:3031, mirror /etc/caddy/attom.nlma.io, then add the connector in Claude.
+
+## After install
+`git init` if needed and push the working tree to origin so the repo holds source once the tarball lapses.
