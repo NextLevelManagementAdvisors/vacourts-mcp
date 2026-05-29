@@ -1,0 +1,15 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Local bulk store (virginiacourtdata SQLite — keep local per VA 2018 bulk-data statute)
+*.db
+*.sqlite
+*.sqlite3
+
+# Case-specific legal filings (not part of the MCP source)
+*.docx
+ADA_access_request_OES.md
+VDBC_registration_NLMA.md
