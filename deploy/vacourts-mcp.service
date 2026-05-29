@@ -1,0 +1,17 @@
+[Unit]
+Description=Virginia Courts MCP (vacourts.nlma.io)
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/vacourts-mcp
+EnvironmentFile=/opt/vacourts-mcp/.env
+ExecStart=/opt/vacourts-mcp/.venv/bin/python -m server --transport http --host 127.0.0.1 --port 3032
+Restart=on-failure
+RestartSec=3
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

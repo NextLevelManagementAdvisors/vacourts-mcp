@@ -8,6 +8,14 @@ venv/
 *.db
 *.sqlite
 *.sqlite3
+*.sqlite-wal
+*.sqlite-shm
+
+# Downloaded bulk dumps (re-fetchable via download_anon.py; never commit)
+dumps/
+
+# Service env with secrets
+.env
 
 # Case-specific legal filings (not part of the MCP source)
 *.docx

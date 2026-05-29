@@ -1,5 +1,4 @@
-fastmcp>=2.0
+fastmcp>=3.2,<4
 pydantic>=2
 pyyaml>=6
-patchright>=1.40        # patched playwright; mirrors patchright.nlma.io pattern
 httpx>=0.27
