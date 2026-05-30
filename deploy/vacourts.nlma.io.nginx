@@ -1,0 +1,54 @@
+# /etc/nginx/sites-enabled/vacourts.nlma.io
+# Mirrors attom.nlma.io. NOTE: no `listen [::]:` — Tailscale Funnel holds IPv6 :443
+# on this VPS and nginx will silently fail to reload otherwise.
+#
+# Auth model: the app (FastMCP GoogleProvider/OAuthProxy) is BOTH the OAuth 2.1
+# authorization server and the resource server. nginx no longer gates with a bearer
+# token — it just proxies. The app serves the OAuth surface clients discover
+# (/.well-known/*, /authorize, /token, /register, /auth/callback, /consent) plus /mcp,
+# and enforces the Google-email allowlist.
+server {
+    listen 80;
+    server_name vacourts.nlma.io;
+    location /.well-known/acme-challenge/ { root /var/www/html; }
+    location / { return 301 https://$host$request_uri; }
+}
+server {
+    listen 443 ssl http2;
+    server_name vacourts.nlma.io;
+    ssl_certificate     /etc/letsencrypt/live/vacourts.nlma.io/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/vacourts.nlma.io/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+    client_max_body_size 2m;
+
+    # Static landing at exactly "/" only; everything else falls through to the app.
+    location = /        { root /var/www/vacourts-mcp; try_files /index.html =404; }
+    location = /health  { proxy_pass http://127.0.0.1:3032/health; access_log off; }
+
+    # /mcp + the full OAuth surface (well-known metadata, authorize/token/register,
+    # /auth/callback, /consent) all proxy to the app, which handles all auth.
+    location / {
+        limit_req zone=vacourts_mcp burst=20 nodelay;
+        limit_req_status 429;
+
+        proxy_pass http://127.0.0.1:3032;
+
+        # streamable-HTTP / SSE requirements
+        proxy_http_version 1.1;
+        proxy_set_header Connection "";
+        proxy_buffering off;
+        proxy_cache off;
+
+        # long-lived streaming
+        proxy_read_timeout 3600s;
+        proxy_send_timeout 3600s;
+
+        # standard forwarding — the app builds absolute OAuth URLs from MCP_BASE_URL,
+        # but keep these correct for cookies/redirects.
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}

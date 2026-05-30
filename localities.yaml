@@ -1,0 +1,938 @@
+# vacourts-mcp :: comprehensive Virginia court table (civil = court-by-court)
+# generated 2026-05-28 from US Census st51 FIPS (state 51)
+# code = 3-digit locality code (CJISWeb court key + virginiacourtdata bulk key)
+# circuit/gd: every VA locality has a Circuit Court and a General District Court.
+#   cjisweb_circuit=false marks the ~3 circuit courts NOT on the statewide CJISWeb system (own CMS).
+#   At runtime the patchright client selects courts by visible NAME in the dropdown (code is for bulk join only).
+localities:
+  - code: "001"
+    name: "Accomack"
+    type: county
+    fips5: "51001"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "003"
+    name: "Albemarle"
+    type: county
+    fips5: "51003"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "005"
+    name: "Alleghany"
+    type: county
+    fips5: "51005"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "007"
+    name: "Amelia"
+    type: county
+    fips5: "51007"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "009"
+    name: "Amherst"
+    type: county
+    fips5: "51009"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "011"
+    name: "Appomattox"
+    type: county
+    fips5: "51011"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "013"
+    name: "Arlington"
+    type: county
+    fips5: "51013"
+    circuit: true
+    gd: true
+    cjisweb_circuit: false
+  - code: "015"
+    name: "Augusta"
+    type: county
+    fips5: "51015"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "017"
+    name: "Bath"
+    type: county
+    fips5: "51017"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "019"
+    name: "Bedford"
+    type: county
+    fips5: "51019"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "021"
+    name: "Bland"
+    type: county
+    fips5: "51021"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "023"
+    name: "Botetourt"
+    type: county
+    fips5: "51023"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "025"
+    name: "Brunswick"
+    type: county
+    fips5: "51025"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "027"
+    name: "Buchanan"
+    type: county
+    fips5: "51027"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "029"
+    name: "Buckingham"
+    type: county
+    fips5: "51029"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "031"
+    name: "Campbell"
+    type: county
+    fips5: "51031"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "033"
+    name: "Caroline"
+    type: county
+    fips5: "51033"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "035"
+    name: "Carroll"
+    type: county
+    fips5: "51035"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "036"
+    name: "Charles City"
+    type: county
+    fips5: "51036"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "037"
+    name: "Charlotte"
+    type: county
+    fips5: "51037"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "041"
+    name: "Chesterfield"
+    type: county
+    fips5: "51041"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "043"
+    name: "Clarke"
+    type: county
+    fips5: "51043"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "045"
+    name: "Craig"
+    type: county
+    fips5: "51045"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "047"
+    name: "Culpeper"
+    type: county
+    fips5: "51047"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "049"
+    name: "Cumberland"
+    type: county
+    fips5: "51049"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "051"
+    name: "Dickenson"
+    type: county
+    fips5: "51051"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "053"
+    name: "Dinwiddie"
+    type: county
+    fips5: "51053"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "057"
+    name: "Essex"
+    type: county
+    fips5: "51057"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "059"
+    name: "Fairfax"
+    type: county
+    fips5: "51059"
+    circuit: true
+    gd: true
+    cjisweb_circuit: false
+  - code: "061"
+    name: "Fauquier"
+    type: county
+    fips5: "51061"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "063"
+    name: "Floyd"
+    type: county
+    fips5: "51063"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "065"
+    name: "Fluvanna"
+    type: county
+    fips5: "51065"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "067"
+    name: "Franklin"
+    type: county
+    fips5: "51067"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "069"
+    name: "Frederick"
+    type: county
+    fips5: "51069"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "071"
+    name: "Giles"
+    type: county
+    fips5: "51071"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "073"
+    name: "Gloucester"
+    type: county
+    fips5: "51073"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "075"
+    name: "Goochland"
+    type: county
+    fips5: "51075"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "077"
+    name: "Grayson"
+    type: county
+    fips5: "51077"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "079"
+    name: "Greene"
+    type: county
+    fips5: "51079"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "081"
+    name: "Greensville"
+    type: county
+    fips5: "51081"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "083"
+    name: "Halifax"
+    type: county
+    fips5: "51083"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "085"
+    name: "Hanover"
+    type: county
+    fips5: "51085"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "087"
+    name: "Henrico"
+    type: county
+    fips5: "51087"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "089"
+    name: "Henry"
+    type: county
+    fips5: "51089"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "091"
+    name: "Highland"
+    type: county
+    fips5: "51091"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "093"
+    name: "Isle of Wight"
+    type: county
+    fips5: "51093"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "095"
+    name: "James City"
+    type: county
+    fips5: "51095"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "097"
+    name: "King and Queen"
+    type: county
+    fips5: "51097"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "099"
+    name: "King George"
+    type: county
+    fips5: "51099"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "101"
+    name: "King William"
+    type: county
+    fips5: "51101"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "103"
+    name: "Lancaster"
+    type: county
+    fips5: "51103"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "105"
+    name: "Lee"
+    type: county
+    fips5: "51105"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "107"
+    name: "Loudoun"
+    type: county
+    fips5: "51107"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "109"
+    name: "Louisa"
+    type: county
+    fips5: "51109"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "111"
+    name: "Lunenburg"
+    type: county
+    fips5: "51111"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "113"
+    name: "Madison"
+    type: county
+    fips5: "51113"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "115"
+    name: "Mathews"
+    type: county
+    fips5: "51115"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "117"
+    name: "Mecklenburg"
+    type: county
+    fips5: "51117"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "119"
+    name: "Middlesex"
+    type: county
+    fips5: "51119"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "121"
+    name: "Montgomery"
+    type: county
+    fips5: "51121"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "125"
+    name: "Nelson"
+    type: county
+    fips5: "51125"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "127"
+    name: "New Kent"
+    type: county
+    fips5: "51127"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "131"
+    name: "Northampton"
+    type: county
+    fips5: "51131"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "133"
+    name: "Northumberland"
+    type: county
+    fips5: "51133"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "135"
+    name: "Nottoway"
+    type: county
+    fips5: "51135"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "137"
+    name: "Orange"
+    type: county
+    fips5: "51137"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "139"
+    name: "Page"
+    type: county
+    fips5: "51139"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "141"
+    name: "Patrick"
+    type: county
+    fips5: "51141"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "143"
+    name: "Pittsylvania"
+    type: county
+    fips5: "51143"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "145"
+    name: "Powhatan"
+    type: county
+    fips5: "51145"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "147"
+    name: "Prince Edward"
+    type: county
+    fips5: "51147"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "149"
+    name: "Prince George"
+    type: county
+    fips5: "51149"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "153"
+    name: "Prince William"
+    type: county
+    fips5: "51153"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "155"
+    name: "Pulaski"
+    type: county
+    fips5: "51155"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "157"
+    name: "Rappahannock"
+    type: county
+    fips5: "51157"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "159"
+    name: "Richmond"
+    type: county
+    fips5: "51159"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "161"
+    name: "Roanoke"
+    type: county
+    fips5: "51161"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "163"
+    name: "Rockbridge"
+    type: county
+    fips5: "51163"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "165"
+    name: "Rockingham"
+    type: county
+    fips5: "51165"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "167"
+    name: "Russell"
+    type: county
+    fips5: "51167"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "169"
+    name: "Scott"
+    type: county
+    fips5: "51169"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "171"
+    name: "Shenandoah"
+    type: county
+    fips5: "51171"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "173"
+    name: "Smyth"
+    type: county
+    fips5: "51173"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "175"
+    name: "Southampton"
+    type: county
+    fips5: "51175"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "177"
+    name: "Spotsylvania"
+    type: county
+    fips5: "51177"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "179"
+    name: "Stafford"
+    type: county
+    fips5: "51179"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "181"
+    name: "Surry"
+    type: county
+    fips5: "51181"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "183"
+    name: "Sussex"
+    type: county
+    fips5: "51183"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "185"
+    name: "Tazewell"
+    type: county
+    fips5: "51185"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "187"
+    name: "Warren"
+    type: county
+    fips5: "51187"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "191"
+    name: "Washington"
+    type: county
+    fips5: "51191"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "193"
+    name: "Westmoreland"
+    type: county
+    fips5: "51193"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "195"
+    name: "Wise"
+    type: county
+    fips5: "51195"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "197"
+    name: "Wythe"
+    type: county
+    fips5: "51197"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "199"
+    name: "York"
+    type: county
+    fips5: "51199"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "510"
+    name: "Alexandria"
+    type: city
+    fips5: "51510"
+    circuit: true
+    gd: true
+    cjisweb_circuit: false
+  - code: "520"
+    name: "Bristol"
+    type: city
+    fips5: "51520"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "530"
+    name: "Buena Vista"
+    type: city
+    fips5: "51530"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "540"
+    name: "Charlottesville"
+    type: city
+    fips5: "51540"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "550"
+    name: "Chesapeake"
+    type: city
+    fips5: "51550"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "570"
+    name: "Colonial Heights"
+    type: city
+    fips5: "51570"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "580"
+    name: "Covington"
+    type: city
+    fips5: "51580"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "590"
+    name: "Danville"
+    type: city
+    fips5: "51590"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "595"
+    name: "Emporia"
+    type: city
+    fips5: "51595"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "600"
+    name: "Fairfax"
+    type: city
+    fips5: "51600"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "610"
+    name: "Falls Church"
+    type: city
+    fips5: "51610"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "620"
+    name: "Franklin"
+    type: city
+    fips5: "51620"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "630"
+    name: "Fredericksburg"
+    type: city
+    fips5: "51630"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "640"
+    name: "Galax"
+    type: city
+    fips5: "51640"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "650"
+    name: "Hampton"
+    type: city
+    fips5: "51650"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "660"
+    name: "Harrisonburg"
+    type: city
+    fips5: "51660"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "670"
+    name: "Hopewell"
+    type: city
+    fips5: "51670"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "678"
+    name: "Lexington"
+    type: city
+    fips5: "51678"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "680"
+    name: "Lynchburg"
+    type: city
+    fips5: "51680"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "683"
+    name: "Manassas"
+    type: city
+    fips5: "51683"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "685"
+    name: "Manassas Park"
+    type: city
+    fips5: "51685"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "690"
+    name: "Martinsville"
+    type: city
+    fips5: "51690"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "700"
+    name: "Newport News"
+    type: city
+    fips5: "51700"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "710"
+    name: "Norfolk"
+    type: city
+    fips5: "51710"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "720"
+    name: "Norton"
+    type: city
+    fips5: "51720"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "730"
+    name: "Petersburg"
+    type: city
+    fips5: "51730"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "735"
+    name: "Poquoson"
+    type: city
+    fips5: "51735"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "740"
+    name: "Portsmouth"
+    type: city
+    fips5: "51740"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "750"
+    name: "Radford"
+    type: city
+    fips5: "51750"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "760"
+    name: "Richmond"
+    type: city
+    fips5: "51760"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "770"
+    name: "Roanoke"
+    type: city
+    fips5: "51770"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "775"
+    name: "Salem"
+    type: city
+    fips5: "51775"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "790"
+    name: "Staunton"
+    type: city
+    fips5: "51790"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "800"
+    name: "Suffolk"
+    type: city
+    fips5: "51800"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "810"
+    name: "Virginia Beach"
+    type: city
+    fips5: "51810"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "820"
+    name: "Waynesboro"
+    type: city
+    fips5: "51820"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "830"
+    name: "Williamsburg"
+    type: city
+    fips5: "51830"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
+  - code: "840"
+    name: "Winchester"
+    type: city
+    fips5: "51840"
+    circuit: true
+    gd: true
+    cjisweb_circuit: true
