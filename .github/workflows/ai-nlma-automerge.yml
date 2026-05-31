@@ -51,7 +51,7 @@ jobs:
         if: hashFiles('package.json') == '' && (hashFiles('requirements.txt') != '' || hashFiles('pyproject.toml') != '')
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.13"
       - name: Python gate (install + compileall)
         if: hashFiles('package.json') == '' && (hashFiles('requirements.txt') != '' || hashFiles('pyproject.toml') != '')
         run: |

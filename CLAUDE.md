@@ -23,7 +23,7 @@ The only lawfully-obtainable bulk dump is **anonymized** — it has **no party n
 
 ```bash
 # install (uv on the VPS; plain venv works locally)
-uv venv --python python3.12 && uv pip install -r requirements.txt   # or: pip install -r requirements.txt
+uv venv --python 3.13 && uv pip install -r requirements.txt   # or: pip install -r requirements.txt
 
 # run locally — stdio (Claude Desktop / fastmcp dev). Default transport.
 python server.py

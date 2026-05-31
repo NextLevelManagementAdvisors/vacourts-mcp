@@ -31,7 +31,7 @@ FastMCP tools: `list_localities`, `search_bulk`, `bulk_stats`, `lookup_pointer`.
 Mirrors attom-mcp (Python uv venv). See `deploy/` for the exact artifacts.
 ```bash
 # on the VPS, /opt/vacourts-mcp
-/root/.local/bin/uv venv --python /usr/bin/python3.12
+/root/.local/bin/uv venv --python 3.13   # uv fetches a managed CPython 3.13 if the system lacks it
 /root/.local/bin/uv pip install -r requirements.txt
 # systemd: ExecStart=.venv/bin/python -m server --transport http --host 127.0.0.1 --port 3032
 # nginx: deploy/vacourts.nlma.io.nginx  (proxies /mcp + OAuth routes to the app; NO `listen [::]` — Tailscale owns IPv6 :443)

@@ -14,10 +14,10 @@ Deploy is run directly on `178.16.141.166` over SSH (the Shell MCP host mount is
 
 ## One-shot install (flat, paste as-is over SSH)
 ```bash
-cd /opt && python3.12 -c 'import urllib.request;urllib.request.urlretrieve("https://tmpfiles.org/dl/wpw1eZAbLwph/vacourts.tgz","/tmp/v.tgz")' \
+cd /opt && python3 -c 'import urllib.request;urllib.request.urlretrieve("https://tmpfiles.org/dl/wpw1eZAbLwph/vacourts.tgz","/tmp/v.tgz")' \
  && sha256sum /tmp/v.tgz | grep -q 1812b4fc871372591d83ce012c963a1a9731c88ec1d06e04ad1c20ccd0d82fa4 \
  && mkdir -p /opt/vacourts-mcp && tar xzf /tmp/v.tgz -C /opt/vacourts-mcp && cd /opt/vacourts-mcp \
- && cp -n .env.example .env && /root/.local/bin/uv venv --python /usr/bin/python3.12 \
+ && cp -n .env.example .env && /root/.local/bin/uv venv --python 3.13 \
  && /root/.local/bin/uv pip install -r requirements.txt \
  && .venv/bin/python -c 'import fastmcp,yaml,bulk_ingest,server;print("OK")'
 ```
