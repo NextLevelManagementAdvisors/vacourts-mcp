@@ -1,0 +1,11 @@
+.git
+.venv
+__pycache__
+*.pyc
+.env
+*.log
+va_cases.sqlite
+va_cases.sqlite-shm
+va_cases.sqlite-wal
+*.sqlite
+*.sqlite-*
