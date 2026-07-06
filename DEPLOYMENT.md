@@ -67,6 +67,29 @@ Endpoints the app serves (all proxied by nginx): `/.well-known/oauth-authorizati
 The app **fails closed**: with `MCP_TRANSPORT=http` and no `GOOGLE_OAUTH_CLIENT_ID` it refuses
 to start (unless `ALLOW_UNAUTHENTICATED=1`, for local testing only).
 
+### Verifying the live vhost matches this repo (nginx drift check)
+
+`deploy/vacourts.nlma.io.nginx` in git is the only auth model this app supports: nginx proxies
+everything and the app (Google OAuth) gates access. There is no CD for this repo — the VPS is
+updated by hand over SSH — so the live `/etc/nginx/sites-enabled/vacourts.nlma.io` can silently
+drift from what's committed (this is exactly what caused #5: a static `Bearer` `if`-gate got
+added on the box outside of git, which 401'd every OAuth-based connector, incl. claude.ai,
+before it ever reached the app). After any manual nginx edit, or periodically, confirm the two
+are identical and the OAuth surface is actually reachable:
+
+```bash
+# on the VPS: byte-for-byte diff against what's checked in
+diff /etc/nginx/sites-enabled/vacourts.nlma.io /opt/vacourts-mcp/deploy/vacourts.nlma.io.nginx
+
+# from anywhere: the app's OAuth metadata must be reachable with NO Authorization header
+curl -s -o /dev/null -w '%{http_code}\n' https://vacourts.nlma.io/.well-known/oauth-authorization-server
+# -> 200 (a 401/404 here means nginx is gating before the app, or the vhost is stale)
+```
+
+If the diff shows any local edit (e.g. an `if ($http_authorization ...)` block), that edit is
+the bug: replace it with the repo's version, `nginx -t && systemctl reload nginx`, then re-add
+the connector in Claude.ai.
+
 ## Load / refresh bulk data
 ```bash
 .venv/bin/python download_anon.py --dir dumps           # ~3.3 GB compressed
