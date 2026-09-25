@@ -238,25 +238,43 @@ def list_localities() -> list[dict]:
 @mcp.tool
 def search_bulk(locality: str = None, division: str = None, charge: str = None,
                 code_section: str = None, person_id: str = None, year: int = None,
+                filed_from: str = None, filed_to: str = None,
                 limit: int = 100) -> list[dict]:
-    """Search the local ANONYMIZED bulk store (virginiacourtdata dump, 2005-2025).
+    """Search the local ANONYMIZED bulk store (virginiacourtdata.org dump).
     NOTE: this data has NO party names / case numbers / DOB (stripped at source), so
     you CANNOT look someone up by name here. Filter by locality (3-digit code or name),
     division (civil|criminal), charge keyword, code_section, person_id (the only
     cross-case identity in criminal data), and/or year. For name-based lookups use
-    lookup_pointer (official OCIS/CJISWeb). Returns [] if the store isn't ingested yet."""
+    lookup_pointer (official OCIS/CJISWeb).
+    IMPORTANT: `year` is the source export-batch year (from the dump filename), NOT the
+    filing year -- filings run several months past the batch year. To filter by actual
+    filing date use filed_from/filed_to (YYYY-MM-DD, inclusive, matched against filed_date).
+    Call the coverage tool to see the actual filed_date range currently loaded.
+    Returns [] if the store isn't ingested yet."""
     fips = _resolve(locality)["code"] if locality else None
     return store.search(fips=fips, division=division, charge=charge,
-                        code_section=code_section, person_id=person_id, year=year, limit=limit)
+                        code_section=code_section, person_id=person_id, year=year,
+                        filed_from=filed_from, filed_to=filed_to, limit=limit)
 
 
 @mcp.tool
 def bulk_stats(group_by: str = "division") -> list[dict]:
     """Aggregate row counts in the local bulk store, grouped by one of:
-    division | court_level | fips | disposition | year. The anonymized data is best
-    used for aggregate/statistical queries (counts by locality, charge, disposition)
+    division | court_level | fips | disposition | year | filed_year. `year` is the source
+    export-batch year (from the dump filename); `filed_year` is the calendar year of
+    filed_date -- use filed_year for actual filing-activity trends. The anonymized data is
+    best used for aggregate/statistical queries (counts by locality, charge, disposition)
     rather than individual name lookups."""
     return store.stats(group_by)
+
+
+@mcp.tool
+def coverage() -> list[dict]:
+    """Actual filed_date coverage (MIN/MAX + row count) per division in the local bulk
+    store. Use this instead of trusting a hardcoded year range: `year` on search_bulk/
+    bulk_stats is the source export-batch year, not the filing year, so it doesn't tell
+    you how current the data actually is."""
+    return store.coverage()
 
 
 @mcp.tool
