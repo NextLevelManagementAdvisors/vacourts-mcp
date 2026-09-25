@@ -141,10 +141,15 @@ def bulk_stats(group_by: str = "division") -> list[dict]:
 
 
 @mcp.tool
-def lookup_pointer(locality: str = None, division: str = "criminal") -> dict:
+def lookup_pointer(locality: str = None, division: str = "criminal",
+                    court_level: str = "district") -> dict:
     """For activity newer than the bulk dump (or not covered by it): returns the OFFICIAL Virginia
     court lookup URL + step-by-step instructions for a HUMAN to run the search by hand.
-    Automates nothing (OCIS 2.0 EULA bars automated scripting). division: criminal|traffic|civil."""
+    Automates nothing (OCIS 2.0 EULA bars automated scripting). division: criminal|traffic|civil.
+    court_level (civil only): district|circuit. Defaults to district: the bulk data shows the vast
+    majority of civil filings (warrants in debt, unlawful detainer) are General District Court, not
+    Circuit — passing court_level="circuit" only when you specifically need circuit civil (e.g.
+    larger-dollar suits, appeals)."""
     if division in ("criminal", "traffic"):
         return {
             "system": "OCIS 2.0 (statewide adult criminal/traffic)",
@@ -157,12 +162,38 @@ def lookup_pointer(locality: str = None, division: str = "criminal") -> dict:
             ],
             "note": "Statewide; no locality needed. Manual lookup only.",
         }
-    # civil -> per-court CJISWeb
+    if court_level not in ("district", "circuit"):
+        raise ValueError("court_level must be 'district' or 'circuit'")
+    # civil, General District Court (warrants in debt, unlawful detainer, etc.)
+    if court_level == "district":
+        result = {
+            "system": "GDC Online Case Information (per-court civil, General District Court)",
+            "url": CJIS_GD,
+            "note": "Covers warrants in debt, unlawful detainer, and other GDC civil matters. "
+                    "Manual lookup only.",
+        }
+        if locality:
+            l = _resolve(locality)
+            result["court"] = l["name"]
+            result["court_code"] = l["code"]
+            result["steps"] = [
+                "Open the GDC Online Case Information URL.",
+                f"Select the court by name: {l['name']}.",
+                "Search by name (case types include warrant in debt / unlawful detainer).",
+            ]
+        else:
+            result["steps"] = [
+                "Open the GDC Online Case Information URL.",
+                "Select the court by locality name.",
+                "Search by name.",
+            ]
+        return result
+    # civil, Circuit Court -> per-court CJISWeb
     if locality:
         l = _resolve(locality)
         circuit = l.get("cjisweb_circuit", True)
         return {
-            "system": "CJISWeb (per-court civil)",
+            "system": "CJISWeb (per-court civil, Circuit Court)",
             "url": CJIS_CIRCUIT if circuit else None,
             "court": l["name"],
             "court_code": l["code"],
@@ -171,13 +202,13 @@ def lookup_pointer(locality: str = None, division: str = "criminal") -> dict:
                 f"Select the court by name: {l['name']}.",
                 "Accept terms, solve reCAPTCHA, choose Civil, and search by name.",
             ] if circuit else []),
-            "note": ("Civil is court-by-court; one locality at a time. Manual lookup only."
+            "note": ("Circuit civil is court-by-court; one locality at a time. Manual lookup only."
                      + ("" if circuit else f" {l['name']} runs its own CMS — check the locality's own portal.")),
         }
     return {
-        "system": "CJISWeb (per-court civil)",
+        "system": "CJISWeb (per-court civil, Circuit Court)",
         "url": CJIS_CIRCUIT,
-        "note": "Civil is court-by-court. Pass a locality (3-digit code or name) for court-specific steps.",
+        "note": "Circuit civil is court-by-court. Pass a locality (3-digit code or name) for court-specific steps.",
     }
 
 
