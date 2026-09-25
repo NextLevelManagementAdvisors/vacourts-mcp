@@ -137,6 +137,8 @@ def main(argv=None) -> int:
         print(f"[{n}/{len(files)}] {f.name}: +{rows:,} (total {grand:,})", flush=True)
     print("building indexes ...", flush=True)
     c.executescript(INDEX_DDL)
+    print("building meta (coverage/bulk_stats cache) ...", flush=True)
+    store.build_meta(c)
     c.execute("PRAGMA wal_checkpoint(TRUNCATE)")
     c.close()
     print(f"DONE: {grand:,} rows across {len(files)} files -> {store.DB}")
