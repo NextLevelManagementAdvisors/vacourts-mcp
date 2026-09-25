@@ -5,6 +5,8 @@ services:
     container_name: vacourts-mcp
     restart: unless-stopped
     env_file: .env
+    environment:
+      FASTMCP_HOME: /opt/vacourts-mcp/data/fastmcp
     network_mode: host
     working_dir: /opt/vacourts-mcp
     command: ["python", "-m", "server", "--transport", "http"]
