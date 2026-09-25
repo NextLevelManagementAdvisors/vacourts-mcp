@@ -11,9 +11,13 @@ LEGAL GUARDRAIL: results are for internal due-diligence only. Va. 2018 bulk-data
 selling, re-hosting, or redistributing aggregated case data to third parties. Store stays local.
 """
 import yaml, pathlib, argparse, os, logging
+from urllib.parse import parse_qs, urlparse
 from fastmcp import FastMCP
+from fastmcp.server.auth.oauth_proxy.ui import create_error_html
 from fastmcp.server.auth.providers.google import GoogleProvider, GoogleTokenVerifier
 from fastmcp.server.auth.auth import AccessToken
+from starlette.requests import Request
+from starlette.responses import HTMLResponse, RedirectResponse
 import store
 
 log = logging.getLogger("vacourts.auth")
@@ -32,70 +36,133 @@ CJIS_GD      = "https://eapps.courts.state.va.us/gdcourts"
 # claude.ai (and other MCP web clients) only authenticate via OAuth + Dynamic
 # Client Registration. FastMCP's GoogleProvider is an OAuthProxy: it synthesizes
 # DCR for the client and proxies the real login to Google. Access is then locked
-# to an explicit email allowlist (no FastMCP provider ships one), so completing a
-# Google login is necessary but not sufficient — the email must be on the list.
+# to an explicit email/domain allowlist (no FastMCP provider ships one), so
+# completing a Google login is necessary but not sufficient.
 class AllowlistGoogleTokenVerifier(GoogleTokenVerifier):
-    """Google token verifier that additionally requires a verified, allowlisted email."""
+    """Google token verifier that additionally requires a verified, allowlisted email/domain."""
 
-    def __init__(self, *, allowed_emails: set[str], **kw):
+    def __init__(self, *, allowed_emails: set[str], allowed_domains: set[str], **kw):
         super().__init__(**kw)
-        self._allowed = {e.strip().lower() for e in allowed_emails if e.strip()}
+        self._emails = {e.strip().lower() for e in allowed_emails if e.strip()}
+        self._domains = {d.strip().lower().lstrip("@") for d in allowed_domains if d.strip()}
+
+    def _allowed_email(self, access: AccessToken) -> str | None:
+        """The verified, allowlisted email for `access`, or None if it doesn't qualify."""
+        claims = access.claims or {}
+        email = (claims.get("email") or "").lower()
+        if not email or claims.get("email_verified") is False:
+            return None
+        domain = email.rpartition("@")[2]
+        if email in self._emails or (domain and domain in self._domains):
+            return email
+        return None
 
     async def verify_token(self, token: str) -> AccessToken | None:
         access = await super().verify_token(token)
         if access is None:
             return None
-        claims = access.claims or {}
-        email = (claims.get("email") or "").lower()
-        if claims.get("email_verified") is False:
-            log.warning("vacourts: rejecting unverified Google email %r", email)
-            return None
-        if email not in self._allowed:
-            log.warning("vacourts: rejecting non-allowlisted email %r", email or "<none>")
+        if self._allowed_email(access) is None:
+            log.warning("vacourts: rejecting non-allowlisted email %r",
+                        (access.claims or {}).get("email") or "<none>")
             return None
         return access
 
 
-class AllowlistGoogleProvider(GoogleProvider):
-    """GoogleProvider whose token verifier enforces an email allowlist."""
+def _code_from_redirect(response: RedirectResponse) -> str | None:
+    location = response.headers.get("location")
+    if not location:
+        return None
+    return parse_qs(urlparse(location).query).get("code", [None])[0]
 
-    def __init__(self, *, allowed_emails: set[str], **kw):
+
+class AllowlistGoogleProvider(GoogleProvider):
+    """GoogleProvider whose token verifier enforces an email/domain allowlist."""
+
+    def __init__(self, *, allowed_emails: set[str], allowed_domains: set[str], **kw):
         super().__init__(**kw)
         # OAuthProxy stores the verifier as self._token_validator and routes every
         # verify_token() call through it; swap in the allowlisting one, preserving
         # the normalized required scopes the GoogleProvider computed.
         self._token_validator = AllowlistGoogleTokenVerifier(
             allowed_emails=allowed_emails,
+            allowed_domains=allowed_domains,
             required_scopes=self._token_validator.required_scopes,
         )
+
+    async def _handle_idp_callback(self, request: Request) -> HTMLResponse | RedirectResponse:
+        """Reject non-allowlisted users here, before a client code is issued.
+
+        Without this, a non-allowlisted user completes Google sign-in successfully,
+        the connector gets a valid-looking code/token, and only discovers they're
+        rejected when the MCP client calls the server and gets a bare 401 -- which
+        looks like an expired token and sends the client into a retry loop instead
+        of telling the user to ask the admin for access.
+        """
+        response = await super()._handle_idp_callback(request)
+        if not isinstance(response, RedirectResponse):
+            return response
+        code = _code_from_redirect(response)
+        code_model = await self._code_store.get(key=code) if code else None
+        idp_access_token = (code_model.idp_tokens or {}).get("access_token") if code_model else None
+        if not idp_access_token:
+            return response
+        verifier = self._token_validator
+        access = await GoogleTokenVerifier.verify_token(verifier, idp_access_token)
+        if access is not None and verifier._allowed_email(access) is not None:
+            return response
+        await self._code_store.delete(key=code)
+        email = (access.claims or {}).get("email") if access else None
+        log.warning("vacourts: rejecting non-allowlisted email %r at OAuth callback", email or "<none>")
+        html_content = create_error_html(
+            error_title="Not Authorized",
+            error_message=f"{email or 'This Google account'} is not authorized for vacourts. "
+                          "Ask the admin to add it to ALLOWED_GOOGLE_EMAILS or ALLOWED_GOOGLE_DOMAINS.",
+        )
+        return HTMLResponse(content=html_content, status_code=403)
 
 
 def build_auth():
     """Build the Google OAuth provider from env, or None if not configured.
 
     GOOGLE_OAUTH_CLIENT_ID present => OAuth is enabled and CLIENT_SECRET,
-    MCP_BASE_URL, and ALLOWED_GOOGLE_EMAILS are all required (fail closed).
+    MCP_BASE_URL, and at least one of ALLOWED_GOOGLE_EMAILS/ALLOWED_GOOGLE_DOMAINS
+    are all required (fail closed).
     """
     client_id = os.environ.get("GOOGLE_OAUTH_CLIENT_ID")
     if not client_id:
         return None
     client_secret = os.environ.get("GOOGLE_OAUTH_CLIENT_SECRET")
     base_url = os.environ.get("MCP_BASE_URL")
-    allowed = {e.strip().lower()
-               for e in os.environ.get("ALLOWED_GOOGLE_EMAILS", "").split(",")
-               if e.strip()}
+    allowed_emails = {e.strip().lower()
+                      for e in os.environ.get("ALLOWED_GOOGLE_EMAILS", "").split(",")
+                      if e.strip()}
+    allowed_domains = {d.strip().lower().lstrip("@")
+                       for d in os.environ.get("ALLOWED_GOOGLE_DOMAINS", "").split(",")
+                       if d.strip()}
     missing = [n for n, v in (("GOOGLE_OAUTH_CLIENT_SECRET", client_secret),
                               ("MCP_BASE_URL", base_url),
-                              ("ALLOWED_GOOGLE_EMAILS", allowed)) if not v]
+                              ("ALLOWED_GOOGLE_EMAILS or ALLOWED_GOOGLE_DOMAINS",
+                               allowed_emails or allowed_domains)) if not v]
     if missing:
         raise SystemExit(f"GOOGLE_OAUTH_CLIENT_ID is set but {', '.join(missing)} missing")
+    kw = {}
+    # A fixed signing key keeps the FastMCP-issued JWTs (and the derived, disk-persisted
+    # OAuth-state directory under FASTMCP_HOME) stable across restarts and client-secret
+    # rotations. Without it, OAuthProxy derives the key from GOOGLE_OAUTH_CLIENT_SECRET,
+    # which is deterministic but silently invalidates every session if that secret ever
+    # changes. Optional: falls back to that derivation, unchanged, when unset.
+    jwt_signing_key = os.environ.get("FASTMCP_SERVER_AUTH_GOOGLE_JWT_SIGNING_KEY")
+    if jwt_signing_key:
+        kw["jwt_signing_key"] = jwt_signing_key
     return AllowlistGoogleProvider(
         client_id=client_id,
         client_secret=client_secret,
         base_url=base_url,
-        allowed_emails=allowed,
+        allowed_emails=allowed_emails,
+        allowed_domains=allowed_domains,
         # email is required for the allowlist; profile rounds out the identity.
         required_scopes=["openid", "email", "profile"],
+        **kw,
     )
 
 

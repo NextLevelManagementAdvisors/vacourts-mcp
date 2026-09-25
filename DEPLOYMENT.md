@@ -47,8 +47,17 @@ systemctl enable --now vacourts-mcp
 The app (`server.py`) wires FastMCP's `GoogleProvider`, an `OAuthProxy` that synthesizes
 Dynamic Client Registration for web clients (claude.ai) and proxies the real login to
 Google. nginx no longer gates — it just proxies; the app is both the OAuth authorization
-server and the resource server. Access is locked to `ALLOWED_GOOGLE_EMAILS`
-(`AllowlistGoogleTokenVerifier`): a verified Google login is necessary but **not sufficient**.
+server and the resource server. Access is locked to `ALLOWED_GOOGLE_EMAILS` and/or
+`ALLOWED_GOOGLE_DOMAINS` (`AllowlistGoogleTokenVerifier`): a verified Google login is
+necessary but **not sufficient**. A non-allowlisted login is rejected at the OAuth callback
+with a readable "Not Authorized" page, instead of a bare 401 the MCP client retries forever.
+
+OAuth state (registered clients, issued tokens) is an encrypted file store under
+`FASTMCP_HOME` (see `docker-compose.yml`, already on the bind-mounted volume) — it survives
+restarts as long as the JWT signing key is stable. Without `FASTMCP_SERVER_AUTH_GOOGLE_JWT_SIGNING_KEY`
+set, that key is derived from `GOOGLE_OAUTH_CLIENT_SECRET`, so it's stable too *unless* the
+secret is ever rotated. Set the signing key explicitly (`openssl rand -hex 32`) to decouple
+the two.
 
 Endpoints the app serves (all proxied by nginx): `/.well-known/oauth-authorization-server`,
 `/.well-known/oauth-protected-resource/mcp`, `/authorize`, `/token`, `/register`,
@@ -62,7 +71,9 @@ Endpoints the app serves (all proxied by nginx): `/.well-known/oauth-authorizati
 3. Authorized redirect URI: `https://vacourts.nlma.io/auth/callback`
 4. Copy the client ID + secret into `/opt/vacourts-mcp/.env` (see `.env.example`):
    `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`, `MCP_BASE_URL=https://vacourts.nlma.io`,
-   `ALLOWED_GOOGLE_EMAILS=forrest@nlma.io[,...]`. `chmod 600 .env`, then `systemctl restart vacourts-mcp`.
+   `ALLOWED_GOOGLE_EMAILS=forrest@nlma.io[,...]` (and/or `ALLOWED_GOOGLE_DOMAINS=nlma.io[,...]`),
+   `FASTMCP_SERVER_AUTH_GOOGLE_JWT_SIGNING_KEY=$(openssl rand -hex 32)`.
+   `chmod 600 .env`, then `systemctl restart vacourts-mcp`.
 
 The app **fails closed**: with `MCP_TRANSPORT=http` and no `GOOGLE_OAUTH_CLIENT_ID` it refuses
 to start (unless `ALLOW_UNAUTHENTICATED=1`, for local testing only).
