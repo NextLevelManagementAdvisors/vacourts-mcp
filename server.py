@@ -10,7 +10,7 @@ Layers:
 LEGAL GUARDRAIL: results are for internal due-diligence only. Va. 2018 bulk-data statute bars
 selling, re-hosting, or redistributing aggregated case data to third parties. Store stays local.
 """
-import yaml, pathlib, argparse, os, logging
+import yaml, pathlib, argparse, os, logging, json, threading, time, urllib.request
 from urllib.parse import parse_qs, urlparse
 from fastmcp import FastMCP
 from fastmcp.server.auth.oauth_proxy.ui import create_error_html
@@ -30,6 +30,55 @@ BY_NAME = {l["name"].lower(): l for l in LOCALITIES}
 OCIS_URL     = "https://eapps.courts.state.va.us/ocis/landing"
 CJIS_CIRCUIT = "https://eapps.courts.state.va.us/CJISWeb/circuit.html"
 CJIS_GD      = "https://eapps.courts.state.va.us/gdcourts"
+
+
+# ---- org-wide approved-domains registry ------------------------------------
+# status.nlma.io Domains card (seeded from the claude.ai org's verified domains),
+# also read by bright-auth, gbp-mcp, skiptrace-mcp, vacode-mcp, vin-mcp and
+# qbo-oauth. Refreshed on a daemon thread so verify_token (called per request)
+# never blocks on the network. On fetch failure keep the last-known-good set,
+# or the baked-in defaults before the first success. AUTHORIZED_DOMAINS_URL=""
+# disables it (env allowlists only).
+_REGISTRY_DEFAULTS = frozenset({
+    "aristidemanagement.com", "fidumcompany.com", "hvacfrontroyal.com", "mattmirus.com",
+    "nextlevelmanagementadvisors.com", "nlma.io", "propmanageplus.com", "tra-lawfirm.com",
+    "turboclaim.ai", "zipadeeservices.com"})
+_registry: dict = {"domains": frozenset(), "started": False}
+
+
+def _fetch_registry(url: str) -> frozenset[str] | None:
+    try:
+        req = urllib.request.Request(url, headers={"Accept": "application/json"})
+        with urllib.request.urlopen(req, timeout=5) as r:
+            doms = frozenset(str(d).strip().lower()
+                             for d in json.loads(r.read().decode()).get("domains", [])
+                             if str(d).strip())
+        return doms or None
+    except Exception as e:  # noqa: BLE001 - any failure falls back to last-known-good
+        log.warning("vacourts: domain registry fetch failed: %r", e)
+        return None
+
+
+def start_domain_registry() -> None:
+    url = os.environ.get("AUTHORIZED_DOMAINS_URL", "https://status.nlma.io/domains.json")
+    if not url or _registry["started"]:
+        return
+    ttl = int(os.environ.get("AUTHORIZED_DOMAINS_TTL", "300"))
+    _registry["started"] = True
+    _registry["domains"] = _fetch_registry(url) or _REGISTRY_DEFAULTS
+
+    def _loop():
+        while True:
+            time.sleep(ttl)
+            doms = _fetch_registry(url)
+            if doms:
+                _registry["domains"] = doms
+
+    threading.Thread(target=_loop, name="domain-registry", daemon=True).start()
+
+
+def registry_domains() -> frozenset[str]:
+    return _registry["domains"]
 
 
 # ---- auth -------------------------------------------------------------------
@@ -53,7 +102,8 @@ class AllowlistGoogleTokenVerifier(GoogleTokenVerifier):
         if not email or claims.get("email_verified") is False:
             return None
         domain = email.rpartition("@")[2]
-        if email in self._emails or (domain and domain in self._domains):
+        if email in self._emails or (domain and (domain in self._domains
+                                                  or domain in registry_domains())):
             return email
         return None
 
@@ -154,6 +204,8 @@ def build_auth():
     jwt_signing_key = os.environ.get("FASTMCP_SERVER_AUTH_GOOGLE_JWT_SIGNING_KEY")
     if jwt_signing_key:
         kw["jwt_signing_key"] = jwt_signing_key
+    # Env allowlists are unioned with the org-wide registry (see start_domain_registry).
+    start_domain_registry()
     return AllowlistGoogleProvider(
         client_id=client_id,
         client_secret=client_secret,
