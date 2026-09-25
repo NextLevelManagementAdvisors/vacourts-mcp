@@ -9,9 +9,12 @@ Redistribution guardrail: local store only. Per Va. 2018 bulk-data statute,
 aggregated case data may NOT be sold, re-hosted, or redistributed to third parties.
 Internal due-diligence use only.
 """
-import sqlite3, pathlib
+import json, sqlite3, pathlib
 
 DB = pathlib.Path(__file__).parent / "va_cases.sqlite"
+
+# group_by keys bulk_stats() accepts; also the set of "stats:<key>" rows cached in `meta`.
+STATS_KEYS = ("division", "court_level", "fips", "disposition", "year", "filed_year")
 
 DDL = """
 CREATE TABLE IF NOT EXISTS cases (
@@ -37,6 +40,10 @@ CREATE TABLE IF NOT EXISTS cases (
   race            TEXT,
   locality        TEXT,
   fetched_at      TEXT
+);
+CREATE TABLE IF NOT EXISTS meta (
+  key   TEXT PRIMARY KEY,   -- 'coverage' or 'stats:<group_by>'
+  value TEXT                -- JSON-encoded result, precomputed at ingest
 );
 CREATE INDEX IF NOT EXISTS idx_person ON cases(person_id);
 CREATE INDEX IF NOT EXISTS idx_fips   ON cases(fips, division);
@@ -85,18 +92,41 @@ def search(fips=None, division=None, charge=None, code_section=None,
     return [dict(zip(cols, row)) for row in cur.fetchall()]
 
 
-def stats(group_by="division"):
-    """Aggregate row counts grouped by one of: division, court_level, fips, disposition,
-    year (source export batch), filed_year (calendar year of filed_date)."""
-    allowed = {"division", "court_level", "fips", "disposition", "year", "filed_year"}
-    if group_by not in allowed:
-        group_by = "division"
+def _live_stats(c, group_by):
     expr = "substr(filed_date, 1, 4)" if group_by == "filed_year" else group_by
-    c = conn()
     cur = c.execute(
         f"SELECT {expr} AS {group_by}, COUNT(*) n FROM cases GROUP BY {expr} ORDER BY n DESC LIMIT 300"
     )
     return [{group_by: r[0], "count": r[1]} for r in cur.fetchall()]
+
+
+def _live_coverage(c):
+    cur = c.execute(
+        "SELECT division, MIN(filed_date), MAX(filed_date), COUNT(*) "
+        "FROM cases GROUP BY division ORDER BY division"
+    )
+    return [{"division": r[0], "min_filed_date": r[1], "max_filed_date": r[2], "count": r[3]}
+            for r in cur.fetchall()]
+
+
+def _cached(c, key):
+    row = c.execute("SELECT value FROM meta WHERE key = ?", (key,)).fetchone()
+    return json.loads(row[0]) if row else None
+
+
+def stats(group_by="division"):
+    """Aggregate row counts grouped by one of: division, court_level, fips, disposition,
+    year (source export batch), filed_year (calendar year of filed_date).
+
+    Reads the precomputed `meta` row written at ingest (O(1)); falls back to a live
+    GROUP BY scan if `meta` hasn't been populated yet (see rebuild_meta.py)."""
+    if group_by not in STATS_KEYS:
+        group_by = "division"
+    c = conn()
+    cached = _cached(c, f"stats:{group_by}")
+    if cached is not None:
+        return cached
+    return _live_stats(c, group_by)
 
 
 def coverage():
@@ -104,14 +134,33 @@ def coverage():
 
     `year` is the source export-batch year, not the filing year, so it under/over-states
     how current the data is (see README). This reports actual filed_date coverage instead.
-    """
+
+    Reads the precomputed `meta` row written at ingest (O(1)); falls back to a live
+    GROUP BY scan if `meta` hasn't been populated yet (see rebuild_meta.py)."""
     c = conn()
-    cur = c.execute(
-        "SELECT division, MIN(filed_date), MAX(filed_date), COUNT(*) "
-        "FROM cases GROUP BY division ORDER BY division"
-    )
-    return [{"division": r[0], "min_filed_date": r[1], "max_filed_date": r[2], "count": r[3]}
-            for r in cur.fetchall()]
+    cached = _cached(c, "coverage")
+    if cached is not None:
+        return cached
+    return _live_coverage(c)
+
+
+def build_meta(c=None):
+    """Compute coverage() + bulk_stats() for every allowed group_by and persist them into
+    `meta`, so coverage()/stats() become O(1) reads instead of full scans of `cases`.
+
+    Called at the end of bulk_ingest.py, and by rebuild_meta.py for a one-time backfill
+    against an existing DB (no re-ingest needed). Takes an open connection so bulk_ingest
+    can call it before closing its own; opens/closes one itself otherwise."""
+    owns = c is None
+    if owns:
+        c = conn()
+    rows = [("coverage", json.dumps(_live_coverage(c)))]
+    rows += [(f"stats:{key}", json.dumps(_live_stats(c, key))) for key in STATS_KEYS]
+    c.executemany("INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)", rows)
+    c.commit()
+    if owns:
+        c.close()
+    return rows
 
 
 def total():
