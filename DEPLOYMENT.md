@@ -7,16 +7,20 @@ access limited to an email allowlist; see **Auth** below).
 
 ## Layers / tools
 - **bulk** — local SQLite (`va_cases.sqlite`) from the *anonymized* virginiacourtdata.org
-  dump (2005–2025). `download_anon.py` (manifest-driven fetch) + `bulk_ingest.py` (streaming
+  dump. `download_anon.py` (manifest-driven fetch) + `bulk_ingest.py` (streaming
   ingest) + `store.py`.
   - ⚠️ The anonymized dump has **NO names / case numbers / DOB** (stripped at source). Criminal
     rows carry `person_id` as the only cross-case identity; civil rows carry none. Rows are
     per hearing/charge. So bulk search is by locality / division / charge / code_section /
     person_id / year — **not by name**.
+  - ⚠️ `year` is the source **export-batch year** (from the dump filename), not the filing
+    year — actual filings run several months past the batch year. Use `filed_from`/`filed_to`
+    on `search_bulk`, `bulk_stats(group_by="filed_year")`, or the `coverage` tool (real
+    MIN/MAX filed_date per division) to reason about actual filing dates/freshness.
 - **lookup_pointer** — returns the official OCIS / CJISWeb URL + human steps for a name-based
   one-off lookup. Automates nothing.
 
-FastMCP tools: `list_localities`, `search_bulk`, `bulk_stats`, `lookup_pointer`.
+FastMCP tools: `list_localities`, `search_bulk`, `bulk_stats`, `coverage`, `lookup_pointer`.
 
 ## Files
 - `server.py`        FastMCP server (stdio default; `--transport http` for the VPS)

@@ -66,7 +66,7 @@ def conn():
 
 
 def search(fips=None, division=None, charge=None, code_section=None,
-           person_id=None, year=None, limit=100):
+           person_id=None, year=None, filed_from=None, filed_to=None, limit=100):
     c = conn()
     q = f"SELECT {','.join(_OUT)} FROM cases WHERE 1=1"
     a = []
@@ -76,6 +76,8 @@ def search(fips=None, division=None, charge=None, code_section=None,
     if code_section: q += " AND code_section LIKE ?";    a.append(f"%{code_section}%")
     if person_id:    q += " AND person_id = ?";          a.append(person_id)
     if year:         q += " AND year = ?";               a.append(int(year))
+    if filed_from:   q += " AND filed_date >= ?";        a.append(filed_from)
+    if filed_to:     q += " AND filed_date <= ?";        a.append(filed_to)
     q += " ORDER BY filed_date DESC LIMIT ?"
     a.append(limit)
     cur = c.execute(q, a)
@@ -84,15 +86,32 @@ def search(fips=None, division=None, charge=None, code_section=None,
 
 
 def stats(group_by="division"):
-    """Aggregate row counts grouped by one of: division, court_level, fips, disposition, year."""
-    allowed = {"division", "court_level", "fips", "disposition", "year"}
+    """Aggregate row counts grouped by one of: division, court_level, fips, disposition,
+    year (source export batch), filed_year (calendar year of filed_date)."""
+    allowed = {"division", "court_level", "fips", "disposition", "year", "filed_year"}
     if group_by not in allowed:
         group_by = "division"
+    expr = "substr(filed_date, 1, 4)" if group_by == "filed_year" else group_by
     c = conn()
     cur = c.execute(
-        f"SELECT {group_by}, COUNT(*) n FROM cases GROUP BY {group_by} ORDER BY n DESC LIMIT 300"
+        f"SELECT {expr} AS {group_by}, COUNT(*) n FROM cases GROUP BY {expr} ORDER BY n DESC LIMIT 300"
     )
     return [{group_by: r[0], "count": r[1]} for r in cur.fetchall()]
+
+
+def coverage():
+    """MIN/MAX(filed_date) and row count per division -- the real, queryable freshness signal.
+
+    `year` is the source export-batch year, not the filing year, so it under/over-states
+    how current the data is (see README). This reports actual filed_date coverage instead.
+    """
+    c = conn()
+    cur = c.execute(
+        "SELECT division, MIN(filed_date), MAX(filed_date), COUNT(*) "
+        "FROM cases GROUP BY division ORDER BY division"
+    )
+    return [{"division": r[0], "min_filed_date": r[1], "max_filed_date": r[2], "count": r[3]}
+            for r in cur.fetchall()]
 
 
 def total():
