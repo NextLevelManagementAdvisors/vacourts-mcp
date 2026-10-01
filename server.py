@@ -273,7 +273,9 @@ def coverage() -> list[dict]:
     """Actual filed_date coverage (MIN/MAX + row count) per division in the local bulk
     store. Use this instead of trusting a hardcoded year range: `year` on search_bulk/
     bulk_stats is the source export-batch year, not the filing year, so it doesn't tell
-    you how current the data actually is."""
+    you how current the data actually is. `min_filed_date` excludes pre-1990 epoch
+    placeholder rows (blank/unparseable source dates stored as 1970-01-01); those are
+    counted separately as `placeholder_count`."""
     return store.coverage()
 
 
