@@ -100,13 +100,21 @@ def _live_stats(c, group_by):
     return [{group_by: r[0], "count": r[1]} for r in cur.fetchall()]
 
 
+EPOCH_PLACEHOLDER_CUTOFF = "1990-01-01"  # source data uses 1970-01-01 for blank/unparseable filed_date
+
+
 def _live_coverage(c):
     cur = c.execute(
-        "SELECT division, MIN(filed_date), MAX(filed_date), COUNT(*) "
-        "FROM cases GROUP BY division ORDER BY division"
+        "SELECT division, "
+        "MIN(CASE WHEN filed_date >= ? THEN filed_date END), "
+        "MAX(filed_date), "
+        "COUNT(*), "
+        "SUM(CASE WHEN filed_date < ? THEN 1 ELSE 0 END) "
+        "FROM cases GROUP BY division ORDER BY division",
+        (EPOCH_PLACEHOLDER_CUTOFF, EPOCH_PLACEHOLDER_CUTOFF),
     )
-    return [{"division": r[0], "min_filed_date": r[1], "max_filed_date": r[2], "count": r[3]}
-            for r in cur.fetchall()]
+    return [{"division": r[0], "min_filed_date": r[1], "max_filed_date": r[2], "count": r[3],
+              "placeholder_count": r[4]} for r in cur.fetchall()]
 
 
 def _cached(c, key):
@@ -134,6 +142,10 @@ def coverage():
 
     `year` is the source export-batch year, not the filing year, so it under/over-states
     how current the data is (see README). This reports actual filed_date coverage instead.
+
+    `min_filed_date` ignores rows with filed_date before 1990-01-01 (the source dump uses
+    1970-01-01 as an epoch placeholder for blank/unparseable dates); those rows are counted
+    separately in `placeholder_count` instead of dragging min_filed_date down to 1970.
 
     Reads the precomputed `meta` row written at ingest (O(1)); falls back to a live
     GROUP BY scan if `meta` hasn't been populated yet (see rebuild_meta.py)."""
